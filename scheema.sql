@@ -6,13 +6,13 @@ CREATE TABLE departments (
   dep_name VARCHAR(30) NULL,
   PRIMARY KEY (id)
 );
-CREATE TABLE role (
+CREATE TABLE roles (
   id INT NOT NULL AUTO_INCREMENT,
   title VARCHAR(30) NULL,
   salary DECIMAL(10,2) NULL,
   dep_id INT NULL,
   PRIMARY KEY (id),
-  FOREIGN KEY (dep_id) REFERENCES department(id)
+  FOREIGN KEY (dep_id) REFERENCES departments(id)
 );
 
 CREATE TABLE employees (
@@ -22,6 +22,7 @@ CREATE TABLE employees (
   role_id INT NULL,
   manager_id INT NULL,
   PRIMARY KEY (id),
-  FOREIGN KEY (role_id) REFERENCES roles(id),
-  FOREIGN KEY (manager_id) REFERENCES manager(id)
+  FOREIGN KEY (role_id) REFERENCES roles(id)
 );
+
+-- Engineering, human resources, marketing, sales, accounting, something else
