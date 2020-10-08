@@ -20,9 +20,6 @@ CREATE TABLE employees (
   first_name VARCHAR(45) NULL,
   last_name VARCHAR(45) NULL,
   role_id INT NULL,
-  manager_id INT NULL,
   PRIMARY KEY (id),
   FOREIGN KEY (role_id) REFERENCES roles(id)
 );
-
--- Engineering, human resources, marketing, sales, accounting, something else

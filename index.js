@@ -5,7 +5,8 @@ const boxen = require("boxen");
 let employeeProfile;
 
 starter();
-let depArr = ["Marketing", "Sales", "Accounting"];
+let depArr = [];
+let roleArr = ["Marketing Director", "Sales Lead", "Accountant"];
 
 function starter() {
     console.log(
@@ -15,7 +16,7 @@ function starter() {
             borderStyle: "double",
         })
     );
-    console.log("\n\n\n")
+    console.log("\n\n")
     mainMenu();
 }
 
@@ -34,6 +35,7 @@ function mainMenu() {
                     "View all roles",
                     "View all employees",
                     "Update an employees role",
+                    "Delete an employee",
                     "Exit",
                 ],
             },
@@ -58,10 +60,12 @@ function mainMenu() {
                 case "View all employees":
                     viewAll();
                     break;
-                case "Update an employees Role":
+                case "Update an employees role":
                     updateEmployee();
                     break;
-
+                case "Delete an employee":
+                    deleteEmployee();
+                    break;
                 case "Exit":
                     console.log("Goodbye!");
                     connection.end();
@@ -100,12 +104,11 @@ function addDepartment() {
         ])
         .then((answer) => {
             connection.query(
-            `INSERT INTO departments (dep_name)
+                `INSERT INTO departments (dep_name)
             VALUES (?)`,
                 [answer.newDep],
                 function (err, res) {
                     if (err) throw err;
-                    depArr.push(answer.newDep);
                     console.log(res.affectedRows + " department inserted! \n");
                     more();
                 }
@@ -127,10 +130,10 @@ function addRole() {
                 name: "roleSalary",
             },
             {
-                type: "list",
-                message: "Enter the ID of the department this role will fall under",
-                name: "department",
-                choices: depArr
+                type: "input",
+                message: "What department ID does this role fall under?",
+                name: "dep_id",
+
             },
         ])
         .then((answers) => {
@@ -140,7 +143,7 @@ function addRole() {
                 [
                     answers.roleTitle,
                     answers.roleSalary,
-                    (depArr.indexOf(answers.department) +1),
+                    answers.dep_id,
                 ],
                 function (err, results) {
                     if (err) throw err;
@@ -156,11 +159,6 @@ function addEmployee() {
         .prompt([
             {
                 type: "input",
-                message: "Enter Employee ID:",
-                name: "id",
-            },
-            {
-                type: "input",
                 message: "What is the new employees first name?",
                 name: "firstName",
             },
@@ -171,25 +169,20 @@ function addEmployee() {
             },
             {
                 type: "input",
-                message: "What is the new employees role Id?",
-                name: "role",
-            },
-            {
-                type: "input",
-                message: "What is the new employees manager Id?",
-                name: "manager",
+                message: "What role ID does this employee fall under?",
+                name: "role_id",
             },
         ])
         .then((answers) => {
             connection.query(
-                "INSERT INTO employee SET ?",
-                {
-                    id: answers.id,
-                    first_name: answers.firstName,
-                    last_name: answers.lastName,
-                    role_id: answers.role,
-                    manager_id: answers.manager,
-                },
+                `INSERT INTO employees (first_name, last_name, role_id)
+                VALUES (?, ?, ?)`,
+                [
+
+                    answers.firstName,
+                    answers.lastName,
+                    answers.role_id,
+                ],
                 function (err, results) {
                     if (err) throw err;
                     console.log(results.affectedRows + " employee inserted! \n");
@@ -203,7 +196,7 @@ function addEmployee() {
 
 
 function allDepartments() {
-    connection.query("SELECT * FROM department", function (err, results) {
+    connection.query("SELECT * FROM departments", function (err, results) {
         if (err) throw err;
         console.log("\n Here are all current Departments. \n");
         console.table(results);
@@ -211,7 +204,7 @@ function allDepartments() {
     });
 }
 function rolesTable() {
-    connection.query("SELECT * FROM role", function (err, results) {
+    connection.query("SELECT * FROM roles", function (err, results) {
         if (err) throw err;
         console.log("\n Here are all current Roles");
         console.table(results);
@@ -220,7 +213,7 @@ function rolesTable() {
 }
 function viewAll() {
     console.log("Viewing all employees:\n");
-    connection.query("SELECT * FROM employee", function (err, results) {
+    connection.query("SELECT * FROM employees", function (err, results) {
         if (err) throw err;
         else {
             // Log all results of the SELECT statement
@@ -229,50 +222,57 @@ function viewAll() {
         }
     });
 }
-
 function updateEmployee() {
-    connection.query("SELECT * FROM employee", function (err, results) {
-        employeeProfile = results;
-        if (err) throw err;
-        inquirer
-            .prompt([
-                {
-                    type: "list",
-                    message: "Which employee would you like to update?",
-                    name: "employee",
-                    choices: results.map(
-                        (result) =>
-                            result.first_name + " " + result.last_name + " " + result.role_id
-                    ),
-                },
-            ])
-            .then((answer) => {
-                let employeeInfo = answer.employee.split(" ");
-                connection.query("SELECT * FROM role", function (err, res) {
+    inquirer
+        .prompt([
+            {
+                type: "input",
+                message: "What is the employees ID number?",
+                name: "emp_id",
+            },
+            {
+                type: "input",
+                message: "What is the new role ID",
+                name: "newRole",
+            },
+        ])
+        .then((answers) => {
+            connection.query(
+                `UPDATE employees SET role_id = ? where id = ?`,
+                [
+
+                    answers.newRole,
+                    answers.emp_id,
+                ],
+                function (err, results) {
                     if (err) throw err;
-                    inquirer
-                        .prompt([
-                            {
-                                type: "list",
-                                message:
-                                    "What role would you like to select for this employee?",
-                                name: "updatedRole",
-                                choices: res.map((res) => res.id + " " + res.title),
-                            },
-                        ])
-                        .then((newRole) => {
-                            let roleId = newRole.updatedRole.split(" ")[0];
-                            connection.query(
-                                "UPDATE employee SET role_id = ?",
-                                [roleId, employeeInfo[2]],
-                                (err, res) => {
-                                    if (err) throw err;
-                                    console.log("Role has been updated! \n ");
-                                    more();
-                                }
-                            );
-                        });
-                });
-            });
-    });
+                    console.log(results.affectedRows + " employee role updated! \n");
+                    more();
+                }
+            );
+        });
+}
+function deleteEmployee() {
+    inquirer
+        .prompt([
+            {
+                type: "input",
+                message: "What is the employees ID number?",
+                name: "emp_id",
+            },
+        ])
+        .then((answers) => {
+            connection.query(
+                `DELETE FROM employees where id = ?`,
+                [
+
+                    answers.emp_id,
+                ],
+                function (err, results) {
+                    if (err) throw err;
+                    console.log(results.affectedRows + " employee has been deleted! \n");
+                    more();
+                }
+            );
+        });
 }
